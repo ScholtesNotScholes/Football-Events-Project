@@ -19,7 +19,7 @@ The rest of this analysis will use the events_new.csv file which was updated in 
 
 ```{r, message=F, warning=F, echo=F}
 library(tidyverse)
-events = read.csv("C:/Users/schol/OneDrive/Documents/Summer 21 Project/Datasets/Football Events/events_new.csv")
+events = read.csv("C:/Users/schol/OneDrive/Documents/Summer 21 Project/Datasets/Football Events/events_new.csv") # Edit path as appropriate!
 
 events = events %>% mutate(
   event_type = as.factor(event_type),
