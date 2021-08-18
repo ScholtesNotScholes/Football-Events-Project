@@ -9,8 +9,6 @@ events = read.csv("-directory to data/events.csv")
 
 2. Create a variable giving the league that the match of each event took place in.
 
-3. Create a variable giving the season that the match of each event took place in.
+3. Recode appropriate variables as factors to make further analysis easier to perform.
 
-4. Recode appropriate variables as factors to make further analysis easier to perform.
-
-5. Checked for duplicated event IDs corresponding to an error inputting data (none were found).
+4. Checked for duplicated event IDs corresponding to an error inputting data (none were found).
