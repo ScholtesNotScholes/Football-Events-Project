@@ -7,6 +7,8 @@
 
 # Import data in README.md as csv, and label it as "events".
 
+events = read.csv("C:/Users/schol/OneDrive/Documents/Summer 21 Project/Datasets/Football Events/events.csv") # Edit file location as necessary
+  
 summary(events)
 
 
@@ -52,58 +54,14 @@ events$league[events$event_team %in% spa] = "La Liga"
 events$league[events$event_team %in% ita] = "Serie A"
 events$league[events$event_team %in% eng] = "Premier League"
 table(events$league, useNA = "ifany")
+# Far fewer games in the Premier League recorded. Bundesliga also has fewer events but this is because fewer
+# games are played per season (18 teams compared to 20 teams).
+events[events$league == "Premier League",][1,]
+# The first Premier League event occurs after over 330,000 events in the dataset (which is chronologically ordered)
+# meaning that recordings for Premier League games started later than for the other leagues.
 
 
-# Edit 3: Create a variable that gives the season in which the match occurred.
-
-# To create this variable, I counted the number of matches that would occur in a season in each league and
-# then used the variable id_match to label the first n number of unique match IDs as the first season, where
-# n is the number of games in a season for a league. This method relies on every game being present for every
-# season in the data because if there is one game missing in the first season then the first game of the next
-# season will be the last game of the first season for every season.
-
-# Bundesliga: 18 teams = 18*17 = 306 per season
-events$season = ""
-events$season[events$id_match %in% unique(events[events$league == "Bundesliga",1])[1:306]] = "11/12"
-events$season[events$id_match %in% unique(events[events$league == "Bundesliga",1])[307:613]] = "12/13"
-events$season[events$id_match %in% unique(events[events$league == "Bundesliga",1])[613:919]] = "13/14"
-events$season[events$id_match %in% unique(events[events$league == "Bundesliga",1])[919:1215]] = "14/15"
-events$season[events$id_match %in% unique(events[events$league == "Bundesliga",1])[1215:1521]] = "15/16"
-events$season[events$id_match %in% unique(events[events$league == "Bundesliga",1])[1521:1608]] = "16/17"
-# Note length(unique(events[events$league == "Bundesliga",1])) = 1608, used in the last line.
-
-# Ligue 1: 20 teams = 20*19 = 380 per season
-events$season[events$id_match %in% unique(events[events$league == "Ligue 1",1])[1:380]] = "11/12"
-events$season[events$id_match %in% unique(events[events$league == "Ligue 1",1])[380:760]] = "12/13"
-events$season[events$id_match %in% unique(events[events$league == "Ligue 1",1])[760:1140]] = "13/14"
-events$season[events$id_match %in% unique(events[events$league == "Ligue 1",1])[1140:1520]] = "14/15"
-events$season[events$id_match %in% unique(events[events$league == "Ligue 1",1])[1520:1900]] = "15/16"
-events$season[events$id_match %in% unique(events[events$league == "Ligue 1",1])[1900:2076]] = "16/17"
-
-# La Liga: 20 teams = 380 per season
-events$season[events$id_match %in% unique(events[events$league == "La Liga",1])[1:380]] = "11/12"
-events$season[events$id_match %in% unique(events[events$league == "La Liga",1])[380:760]] = "12/13"
-events$season[events$id_match %in% unique(events[events$league == "La Liga",1])[760:1140]] = "13/14"
-events$season[events$id_match %in% unique(events[events$league == "La Liga",1])[1140:1520]] = "14/15"
-events$season[events$id_match %in% unique(events[events$league == "La Liga",1])[1520:1900]] = "15/16"
-events$season[events$id_match %in% unique(events[events$league == "La Liga",1])[1900:2015]] = "16/17"
-
-# Serie A: 20 teams = 380 per season
-events$season[events$id_match %in% unique(events[events$league == "Serie A",1])[1:380]] = "11/12"
-events$season[events$id_match %in% unique(events[events$league == "Serie A",1])[380:760]] = "12/13"
-events$season[events$id_match %in% unique(events[events$league == "Serie A",1])[760:1140]] = "13/14"
-events$season[events$id_match %in% unique(events[events$league == "Serie A",1])[1140:1520]] = "14/15"
-events$season[events$id_match %in% unique(events[events$league == "Serie A",1])[1520:1900]] = "15/16"
-events$season[events$id_match %in% unique(events[events$league == "Serie A",1])[1900:2076]] = "16/17"
-
-# Premier League: 20 teams = 380 per season
-length(unique(events[events$league == "Premier League",1]))
-# The number of match IDs for the Premier League is much lower than the other leagues, meaning there is 
-# likely a large amount of data missing for this league. Therefore, the Premier League will be removed
-# from the analysis.
-
-
-# Edit 4: Change some numerical variables to factors.
+# Edit 3: Change some numerical variables to factors.
 
 # Specifically, those variables which contain numbers corresponding to a certain level of something,
 # e.g. shot_outcome = 1 corresponds to "On target". These variables are: event_type, event_type2, side,
@@ -130,3 +88,5 @@ table(duplicated(events$id_event))
 # No duplicated event IDs, so each row seems to be a unique event.
 
 summary(events)
+
+write.csv(events, "events_new.csv")
