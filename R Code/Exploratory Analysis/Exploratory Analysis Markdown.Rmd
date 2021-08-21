@@ -19,7 +19,7 @@ The rest of this analysis will use the events_new.csv file which was updated in 
 
 ```{r, message=F, warning=F, echo=F}
 library(tidyverse)
-events = read.csv("C:/Users/schol/OneDrive/Documents/Summer 21 Project/Datasets/Football Events/events_new.csv") # Edit path as appropriate!
+events = read.csv("C:/Users/schol/OneDrive/Documents/Summer 21 Project/events_new.csv") # Edit file location as necessary
 
 events = events %>% mutate(
   event_type = as.factor(event_type),
@@ -39,7 +39,7 @@ events = events %>% mutate(
 ---
 
 ```{r}
-as.table(summary(events))
+summary(events)
 ```
   
 The dataset contains 24 variables and 941,009 observations, where each observation is an event taking place in a match. To perform some initial exploratory analysis into the variables individually, I will go through those for which this makes the most sense and display information about them through graphics.
@@ -58,26 +58,26 @@ ggplot(events) + geom_bar(aes(x = time), fill = "dark blue", width = 1) +
   annotate("text", x = 90, y = 44000, label = "90'")
 ```
 
-There appears to be a slight upward trend from 0-90 with respect to the number of events occurring in each minute. Moreover, there are two spikes in the plot which correspond to the 45th and 90th minute. This is likely because some events which happened during injury time, e.g. the 45+2 minute, may have been coded as the 45th minute, and the same for the 90th minute. The fact that the spike in the 90th minute is larger than that for the 45th minute is probably because there tends to be more time added on during the second half of a game than the first, mostly because of substitutions or injuries when players get tired. Finally, there is a large drop in the number of events after the 90th minute, which likely is due to the effect of some events being captured in the 90th minute as opposed to the appropriate minute in injury time.
+There appears to be a slight upward trend from 0-90 with respect to the number of events occurring in each minute. Moreover, there are two spikes in the plot which correspond to the 45th and 90th minute. This is likely because some events which happened during injury time, e.g. the 45+2 minute, may have been coded as the 45th minute, and the same for the 90th minute. The fact that the spike in the 90th minute is larger than that for the 45th minute is probably because there tends to be more time added on at the end of the second half of a game than the first, mostly because of substitutions or injuries when players get tired.
 
 ---
 
 ### Event type:
   
-*event_type* shows what occurred in each event, with 12 possible event types.
+event_type shows what occurred in each event, with 12 possible event types.
 
 ```{r}
 event_type.labs = c("0" = "Announcement", "1" = "Attempt", "2" = "Corner", "3" = "Foul", "4" = "Yellow card",
                     "5" = "Second yellow card", "6" = "Red card", "7" = "Substitution", "8" = "Free kick won", 
                     "9" = "Offside", "10" = "Hand ball", "11" = "Penalty conceded")
 
-events %>% add_count(event_type) %>%
-  ggplot() + geom_bar(aes(y = reorder(event_type, n)), fill = "dark red") + 
-    scale_y_discrete("Event Type", labels = event_type.labs) +
-    labs(x = "Number of Events", title = "Number of Events by Type")
+events %>% add_count(event_type) %>% ggplot() +
+  geom_bar(aes(y = reorder(event_type, n)), fill = "dark red") + 
+  scale_y_discrete("Event Type", labels = event_type.labs) +
+  labs(x = "Number of Events", title = "Number of Events by Type")
 ```
 
-The most common events in the data are free kicks won, fouls, and attempts respectively. It may seem odd that there are more free kicks won than fouls, since every free kick won has a corresponding foul in the data, but this is because the category of foul only captures those fouls which do not fit into the other categories, e.g. not a handball, or resulting in a card. Otherwise, corners are very common, but nowhere near as common as the events previously outlined. While it may look like there were no second yellow cards, there were 100 but the figure is too negligible to show up compared to the volume of events in the other categories.
+The three most common events by a large margin are free kicks won, fouls, and attempts respectively, each with over 200,000 events. The next most common event is corners, with almost 100,000 events. The rest of the event types are around 50,000 occurrences or less, with the lowest event types being penalties conceded and sending offs (red card and second yellow card), with there being no second yellow cards in the data. Generally, this suggests that the best events to analyse would be fouls (including free kicks won) or attempts, since these are the events for which there is the most data.
   
   
 There is a second variable for event types, which contains additional information about attempts, yellow cards, second yellow cards, red cards, and offsides.
@@ -85,14 +85,14 @@ There is a second variable for event types, which contains additional informatio
 ```{r}
 event_type2.labs = c("12" = "Key pass", "13" = "Failed through ball", "14" = "Sending off", "15" = "Own goal")
 
-events[!(is.na(events$event_type2)),] %>% add_count(event_type2) %>%
-  ggplot() + geom_bar(aes(y = reorder(event_type2, n)), fill = "dark blue") + 
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-    scale_y_discrete("Event Type", labels = event_type2.labs) +
-    labs(x = "Number of Events", title = "Number of Events by Type 2")
+event_type2.labs = c("12" = "Key pass", "13" = "Failed through ball", "14" = "Sending off", "15" = "Own goal")
+events[!(is.na(events$event_type2)),] %>% add_count(event_type2) %>% ggplot() +
+  geom_bar(aes(y = reorder(event_type2, n)), fill = "dark blue") +
+  scale_y_discrete("Event Type", labels = event_type2.labs) +
+  labs(x = "Number of Events", title = "Number of Events by Type 2")
 ```
 
-The vast majority of the second event types are key passes followed by failed through balls and then a small number of sending offs and own goals.
+Most of the observations for event_type2 are NA, because they are characterised by one of the events in the event_type category, therefore NAs have been excluded in this plot. The most common event in this category is key passes by a large margin, followed by a failed through ball.
 
 ---
 
@@ -101,16 +101,23 @@ The vast majority of the second event types are key passes followed by failed th
 Given the large number of teams in the dataset, I will take a subset of the most common teams and look at which teams have the most events.
 
 ```{r}
-common.teams = count(events, event_team) %>% filter(n > 11000)
-
-events[events$event_team %in% common.teams$event_team,] %>% add_count(event_team, sort = T) %>%
-  ggplot() + 
-  geom_bar(aes(y = reorder(event_team, n), fill = event_type)) +
-  scale_fill_discrete("Event Type", labels = event_type.labs) +
-  labs(x = "Number of Events", title = "Breakdown of Events for Common Teams (n > 11,000)")
+events %>% add_count(event_team) %>% filter(n > 10000) %>% ggplot() +
+  geom_bar(aes(y = reorder(event_team, n), fill = league)) +
+  scale_fill_discrete("League") +
+  labs(y = "Team", x = "Number of Events", title = "Number of Events per Team for Common Teams")
 ```
 
-Unsurprisingly, there are no Bundesliga teams in the most common teams because this is measured by total number of events in the data, and the Bundesliga has fewer games per season than the other leagues meaning there will be fewer events per season on average. The most common teams are all big European teams such as Juventus and Real Madrid. However, Genoa is a team which did not have much success during the period described in the data but had more events than many big European teams. Looking at the breakdown of events by type for Genoa, we see that they have fewer attempts compared to the teams around them and have more fouls, which suggests Genoa's place in the rank could be caused by being a physical team giving away many more fouls than the average team.
+The plot shows the number of events per team for teams with more than 10,000 events in the data. Interestingly, most of the top 10 teams are from the Serie A (Italy), even though they play the same number of games per season as Ligue 1 and La Liga. The Bundesliga teams only occur at the lower end of the plot, which is due to there being fewer games per season in the Bundesliga.
+  
+```{r}
+events %>% add_count(event_team) %>% filter(n > 10000) %>% ggplot() +
+  geom_bar(aes(y = reorder(event_team, n), fill = event_type)) +
+  scale_fill_discrete("Event Type", labels = event_type.labs) +
+  labs(y = "Team", x = "Number of Events", title = "Number of Events per Team for Common Teams")
+```
+  
+The breakdown of events for common teams by type shows what was shown in the previous plot of event types: that the most common types are attempts, fouls, and free kicks won. Thereafter, there is some fluctuation with some teams having more corners and others having more offsides, as is expected with different teams using different strategies and tactics.
+
 
 ---
 
@@ -119,16 +126,13 @@ Unsurprisingly, there are no Bundesliga teams in the most common teams because t
 Just as there are too many teams to see how many events they have, there are even more players in the data, so a similar approach will be taken as above and the most common players by number of events will be considered.
 
 ```{r}
-common.players = count(events[!is.na(events$player) & !is.na(events$event_type),], player) %>% filter(n > 1100)
-
-events[events$player %in% common.players$player,] %>% add_count(player, sort = T) %>%
-  ggplot() + 
-  geom_bar(aes(y = reorder(player, n), fill = event_type)) +
+events[!(is.na(events$player)) & !(is.na(events$event_type)),] %>% add_count(player) %>% filter (n > 1000) %>%
+  ggplot() + geom_bar(aes(y = reorder(player, n), fill = event_type)) +
   scale_fill_discrete("Event Type", labels = event_type.labs) +
-  labs(x = "Number of Events", title = "Breakdown of Events for Common Players (n > 1,100)", y = "Player")
+  labs(y = "Player", x = "Number of Events", title = "Number of Events per Player for Common Players")
 ```
 
-The majority of players in the most common are forwards or wingers, including some of the best players in the game. Two exceptions to this are Juanfran and Perparim Hetemaj, a defender and midfielder respectively. Juanfran, who played for Atletico Madrid for the duration of the period in the data, had a relatively high amount of fouls compared to other players, which is expected since defenders have to tackle more than other players and are therefore more likely to give away a foul. Juanfran also had far more corners than any other player in the dataset, suggesting that Juanfran was Atletico's go to corner taker for a while. Hetemaj, a defensive midfielder, gains most of his events through fouls and free kicks won. Hetemaj has quite a few more fouls than Juanfran, which could reflect that the areas which defenders make tackles are generally more hazardous and closer to the penalty area than defensive midfielders. However, it could simply be that Hetemaj is more aggressive when tackling than Juanfran and others and therefore gives away more fouls.
+Common players are filtered as those who have more than 1,000 events. The most frequently occuring players are typically world class players who are forwards and therefore have a lot of attempts. However, there are some notable exceptions in the plot. Stefan Kiessling, a centre forward who played in the Bundesliga, is the fifth most frequent player in the data, but has far fewer attempts than the players above him. Kiessling's events were mostly winning free kicks and fouling other players, and also having attempts. Juanfran is another interesting exception, given he is a defender, but he clearly took the corners for his team for a long time with more corners than attempts.
 
 ---
 
@@ -143,16 +147,15 @@ shot_place.labs = c("1" = "Bit too high", "2" = "Blocked", "3" = "Bottom left co
                     "11" = "Top centre of the goal", "12" = "Top left corner", "13" = "Top right corner")
 bodypart.labs = c("1" = "Right foot", "2" = "Left foot", "3" = "Head")
 
-events[!is.na(events$shot_place),] %>% add_count(shot_place, sort = T) %>%
-  ggplot() + 
-    geom_bar(aes(y = reorder(shot_place, n), fill = bodypart), position = "stack") +
-    scale_y_discrete("Shot Place", labels = shot_place.labs) +
-    scale_fill_discrete("Bodypart", labels = bodypart.labs) +
-    labs(x = "Number of Shots", title = "Shot placement and Bodypart Used")
+events[!(is.na(events$shot_place)),] %>% add_count(shot_place) %>% ggplot() +
+  geom_bar(aes(y = reorder(shot_place, n), fill = bodypart)) +
+  scale_y_discrete("Shot Place", labels = shot_place.labs) +
+  scale_fill_discrete("Bodypart", labels = bodypart.labs) +
+  labs(x = "Number of Shots", title = "Shot placement and Bodypart Used")
 ```
 
-The majority of shots are blocked, meaning the placement of the shot cannot be accurately determined, with the next two most common being misses either side of goal. The centre of the goal is the most common shot placement on target, followed by both bottom corners. With respect to the bodypart, all of the placements have a majority of right foot, suggesting this is the most common strong foot for players. Then, most of the placements have left foot as their second most common bodypart, followed by head.
-
+By far the most common shot placement is that the shot is blocked, so the placement cannot be identified. Thereafter, shots usually miss to the left or right or go in the centre of the goal, then the bottom corners, and then shots which are too high and wide. For all of the shot placements, the most common bodypart is the right foot, typically followed by left foot and then header. This makes sense since it is most common for players to be right footed, and headers will not happen as common as shots with feet.
+  
 ---
 
 ### Location:
@@ -168,15 +171,14 @@ location.labs = c("1" = "Attacking half", "2" = "Defensive half", "3" = "Centre 
                   "15" = "Outside of the box", "16" = "Long range", "17" = "More than 35 yards", "18" = 
                     "More than 40 yards", "19" = "Not recorded")
 
-events[!is.na(events$location),] %>% add_count(location, sort = T) %>%
-  ggplot() + 
-    geom_bar(aes(y = reorder(location, n), fill = event_type)) +
-    scale_y_discrete("Location", labels = location.labs) + 
-    scale_fill_discrete("Event Type", labels = event_type.labs) +
-    labs(x = "Number of Events", title = "Number of Events by Location on Pitch")
+events[!(is.na(events$location)),] %>% add_count(location) %>% ggplot() +
+  geom_bar(aes(y = reorder(location, n), fill = event_type)) +
+  scale_y_discrete("Location", labels = location.labs) + 
+  scale_fill_discrete("Event Type", labels = event_type.labs) +
+  labs(x = "Number of Events", title = "Number of Events by Location on Pitch")
 ```
 
-The chart shows that only two types of events have a location attached to them: attempts and free kicks won. Moreover, there are locations which are only attached to free kicks won and others which only apply to attempts, and none that overlap. Free kicks won have more general areas, either half and either wing, but it is unclear what these areas represent since either wing could be in either half. Given how many more events are in the defensive half, it could be that the attacking half is broken into wings and the centre, since the sum of those three combined is roughly the same as for the defensive half.
+Looking at the breakdown of locations by event type, we see that only two event types have a location attached to them, which are attempts and free kicks won. Moreover, some of the location tags correspond to attempts and some to free kicks won but none to both. For free kicks won, the most common location is defensive half, followed by attacking half, and then left and right wing. It is unclear whether events on the left and right wing are in the attacking and defensive half, or whether any events in either half are on the wings given a lack of information about the variables. However, the combination of attacking half, left wing, and right wing would be close to the number of events in the defensive half, so the wings could be considered in the attacking half. For attempts, most of them occur outside of the box and then from the centre of the box. Then, there is a large gap before right and left side of the box before the rest, which have a small number of events relatively speaking.
   
 In terms of attempts, most of them come from outside of the box followed by the centre of the box, with the rest being comparatively infrequent. It is interesting to look at how many attempts resulted in goals, shown below.
 
@@ -200,11 +202,12 @@ This variable gives, for every goal, what the type of assist was that came befor
 ```{r}
 assist_method.labs = c("0" = "None", "1" = "Pass", "2" = "Cross", "3" = "Headed pass", "4" = "Through ball")
 
-events[!is.na(events$assist_method),] %>% add_count(assist_method) %>%
-  ggplot() + geom_bar(aes(y = reorder(assist_method, n)), fill = "dark red") +
-    scale_y_discrete("Assist Method", labels = assist_method.labs) +
-    labs(x = "Number of Events", title = "Assist Methods")
+events[!(is.na(events$assist_method)),] %>% add_count(assist_method) %>% ggplot() +
+  geom_bar(aes(y = reorder(assist_method, n), fill = is_goal)) +
+  scale_y_discrete("Assist Method", labels = assist_method.labs) +
+  scale_fill_discrete("Goal Scored", labels = c("No", "Yes")) +
+  labs(x = "Number of Events", title = "Assist Methods")
 ```
 
-The overwhelming majority of goals came without an assist, meaning either that the last player to touch the ball before the goal scorer was an opposition player, or that the goal scorer tackled an opposition player before scoring. Another possibility is that there are observations for which the assist method was not accurately logged and was simply added as "None". The second most common assist is a pass followed by a cross. This information could potentially be misleading because there is no description with the data as to what differentiates a pass from a cross and from a through ball, making it difficult to interpret results based on this variable.
+The overwhelming majority of goals are categorized as without an assist, meaning the last player to touch the ball before the attempt was an opposition player or the attacker intercepted / tackled to gain possession before the attempt without passing. Moreover, it could be that some attempts which had assists were not coded and were simply assigned to none as opposed to the correct assist. There are some ambiguities with this variable caused by a lack of explanation for distinction between levels. For example, it is unclear what constitutes a pass compared to a cross or through ball. This ambiguity makes it difficult to perform analysis with the variable because interpretation will be difficult. Filling the bars by number of goals scored, we see that assists apply even when attempts aren't converted, which is the case in the vast majority of attempts.
 
